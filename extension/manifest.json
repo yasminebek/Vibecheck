@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "VibeCheck — Website to Fix Prompt",
+  "version": "0.1.0",
+  "description": "Inspect the current page locally and copy an evidence-based prompt to fix observable issues.",
+  "permissions": ["activeTab", "scripting"],
+  "action": {"default_popup": "popup.html", "default_title": "Inspect with VibeCheck"},
+  "icons": {"16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png"},
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'; connect-src 'none'"}
+}

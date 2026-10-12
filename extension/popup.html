@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VibeCheck</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+<header><span class="logo" aria-hidden="true">v✓</span><div><h1>VibeCheck<span> BETA</span></h1><p>From shipped to shipshape.</p></div><span class="local">● Local only</span></header>
+<main>
+<section class="intro"><h2>Your website.<br>A better next prompt.</h2><p>Inspect this page. Review the evidence.<br>Give your coding agent a clear plan to fix it.</p><button id="scan" class="primary">Analyze current page <span aria-hidden="true">↗</span></button></section>
+<p id="status" role="status" aria-live="polite">No AI key. No uploads. Runs on your click.</p>
+<section id="results" hidden><div class="summary"><div><strong id="count">0</strong><span>finding types</span></div><p id="origin"></p></div><p class="hint">Select what belongs in your fix prompt. “Review” findings need confirmation.</p><div id="findings"></div><label class="context-label" for="context">Product context <span>optional</span></label><textarea id="context" maxlength="4000" placeholder="e.g. React booking app. Checkout should work on mobile. Include the affected route if safe to share."></textarea><details><summary>Scope &amp; limitations</summary><ul id="limits"></ul></details><div class="prompt-head"><h2>Your fix prompt</h2><button id="copy" class="primary">Copy prompt</button></div><label class="sr-only" for="prompt">Generated fix prompt — editable before copying</label><textarea id="prompt" spellcheck="false"></textarea><p class="hint">Review before sharing. Includes origin and structural selectors; omits page text, input values and URL paths.</p><button id="download" class="secondary">Download report JSON</button></section>
+</main><footer>Built by Yasmine Bekhiche · Open source · v0.1</footer><script type="module" src="popup.js"></script></body></html>

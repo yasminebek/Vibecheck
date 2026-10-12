@@ -1,0 +1,4 @@
+node_modules/
+*.zip
+*-test-ui.png
+.DS_Store

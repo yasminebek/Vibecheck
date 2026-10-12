@@ -30,9 +30,15 @@ try {
  await page.goto(`http://127.0.0.1:${server.address().port}/`);
  await page.bringToFront();
  // OS-level activation exercises Chrome's actual activeTab grant.
+ const windowId = execFileSync('xdotool',['search','--onlyvisible','--name','VibeCheck real extension test'],{encoding:'utf8'}).trim().split('\n')[0];
+ execFileSync('xdotool',['windowfocus','--sync',windowId]);
  const popupPromise = context.waitForEvent('page',{timeout:15000});
  execFileSync('xdotool',['key','--clearmodifiers','alt+shift+v']);
- const popup = await popupPromise;
+ const popup = await popupPromise.catch(async error => {
+  const cdp = await context.newCDPSession(page);
+  console.log('Browser targets:', JSON.stringify(await cdp.send('Target.getTargets')));
+  throw error;
+ });
  await popup.waitForLoadState('domcontentloaded');
  assert.ok(popup.url().startsWith('chrome-extension://'), popup.url());
  const errors=[]; popup.on('pageerror',e=>errors.push(e.message));

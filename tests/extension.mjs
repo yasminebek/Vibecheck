@@ -32,29 +32,65 @@ try {
  // OS-level activation exercises Chrome's actual activeTab grant.
  const windowId = execFileSync('xdotool',['search','--onlyvisible','--name','VibeCheck real extension test'],{encoding:'utf8'}).trim().split('\n')[0];
  execFileSync('xdotool',['windowfocus','--sync',windowId]);
- const popupPromise = context.waitForEvent('page',{timeout:15000});
+ const cdp = await context.newCDPSession(page);
  execFileSync('xdotool',['key','--clearmodifiers','alt+shift+v']);
- const popup = await popupPromise.catch(async error => {
-  const cdp = await context.newCDPSession(page);
-  console.log('Browser targets:', JSON.stringify(await cdp.send('Target.getTargets')));
-  throw error;
+ let target;
+ for (let attempt=0; attempt<50; attempt++) {
+  target = (await cdp.send('Target.getTargets')).targetInfos.find(t=>t.url.startsWith('chrome-extension://') && t.url.endsWith('/popup.html'));
+  if (target) break;
+  await new Promise(r=>setTimeout(r,100));
+ }
+ assert.ok(target,'Extension popup did not open');
+ // Extension action popups are not automatically attached by Playwright.
+ // Use a nested CDP session against the actual popup, without API stubs.
+ const {sessionId} = await cdp.send('Target.attachToTarget',{targetId:target.targetId,flatten:false});
+ let nextId=0;
+ const pending = new Map();
+ cdp.on('Target.receivedMessageFromTarget', event=>{
+  if (event.sessionId !== sessionId) return;
+  const message = JSON.parse(event.message);
+  const call = pending.get(message.id);
+  if (!call) return;
+  pending.delete(message.id); clearTimeout(call.timer);
+  if (message.error) call.reject(new Error(JSON.stringify(message.error))); else call.resolve(message.result);
  });
- await popup.waitForLoadState('domcontentloaded');
- assert.ok(popup.url().startsWith('chrome-extension://'), popup.url());
- const errors=[]; popup.on('pageerror',e=>errors.push(e.message));
- await popup.getByRole('button',{name:'Analyze current page'}).click();
- await popup.locator('#results').waitFor({state:'visible',timeout:15000});
- const prompt = await popup.locator('#prompt').inputValue();
+ async function send(method,params={}) {
+  const id=++nextId;
+  const result=new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>{pending.delete(id);reject(new Error('CDP timeout: '+method));},10000);
+   pending.set(id,{resolve,reject,timer});
+  });
+  await cdp.send('Target.sendMessageToTarget',{sessionId,message:JSON.stringify({id,method,params})});
+  return result;
+ }
+ async function evaluate(expression) {
+  const result=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});
+  assert.ok(!result.exceptionDetails,JSON.stringify(result.exceptionDetails));
+  return result.result.value;
+ }
+ async function wait(expression) {
+  for(let i=0;i<100;i++) {if(await evaluate(expression)) return; await new Promise(r=>setTimeout(r,100));}
+  throw new Error('Popup condition timed out: '+expression+'; status: '+await evaluate('document.getElementById("status")?.textContent'));
+ }
+ async function click(id) {
+  await evaluate(`document.getElementById(${JSON.stringify(id)}).scrollIntoView({block:'center'})`);
+  const box=await evaluate(`(()=>{const r=document.getElementById(${JSON.stringify(id)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...box});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...box});
+ }
+ await wait('document.readyState === "complete"');
+ await click('scan');
+ await wait('!document.getElementById("results").hidden');
+ const prompt=await evaluate('document.getElementById("prompt").value');
  assert.match(prompt,/Images failed to render/);
  assert.match(prompt,/Buttons may lack accessible names/);
  assert.match(prompt,/Placeholder links need review/);
- await popup.getByRole('button',{name:'Copy prompt',exact:true}).click();
- await popup.waitForFunction(()=>document.getElementById('status').textContent.includes('Prompt copied'));
- // Verify the OS clipboard by pasting into the editable context field.
- await popup.locator('#context').focus();
- await popup.keyboard.press('Control+V');
- assert.equal(await popup.locator('#context').inputValue(),prompt.slice(0,4000));
- assert.deepEqual(errors,[]);
+ await click('copy');
+ await wait('document.getElementById("status").textContent.includes("Prompt copied")');
+ await click('context');
+ execFileSync('xdotool',['key','--clearmodifiers','ctrl+v']);
+ await wait('document.getElementById("context").value.length > 0');
+ assert.equal(await evaluate('document.getElementById("context").value'),prompt.slice(0,4000));
  console.log('PASS: real extension popup, activeTab grant, script injection, evidence prompt, clipboard write and paste.');
 } finally {
  await context?.close(); await new Promise(r=>server.close(r)); await rm(temporary,{recursive:true,force:true});

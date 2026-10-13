@@ -64,11 +64,21 @@ npm test
 npm run test:browser
 ```
 
-Node 22+ recommended. Tests use Node's test runner and Playwright Chromium. Browser tests exercise the real audit on broken and healthy fixtures and the UI with a stubbed Chrome API. They verify privacy exclusions, selection, context regeneration, downloads and restricted-page errors. They do not automate a toolbar click or verify Brave-specific behavior.
+Node 22+ recommended. Tests use Node's test runner and Playwright Chromium. Browser tests exercise the real audit on broken and healthy fixtures and the UI with a stubbed Chrome API. They verify privacy exclusions, selection, context regeneration, downloads and restricted-page errors. The separate real-extension test below exercises the actual action popup and browser permissions. Brave-specific behavior is not yet verified.
 
 ### Validation of this initial delivery
 
-Eight automated tests passed: prompt selection/context and DOM-rule/privacy tests using jsdom with simulated visibility. JavaScript syntax checks passed. jsdom is not a browser layout engine. The included Playwright suite could not run in the build environment because Chromium startup was blocked by socket restrictions. Real browser rendering, activeTab injection, clipboard behavior and Brave compatibility remain to be validated using the checklist below. This is an initial beta, not a verified production release.
+Eight unit tests and the Playwright browser suite passed. A headed Chromium integration test also passed on [GitHub Actions](https://github.com/yasminebek/Vibecheck/actions/runs/38351788413): it opened the real extension action popup, obtained the normal activeTab grant, injected the scanner into a demo page, verified expected findings, and copied/pasted the generated prompt through the OS clipboard.
+
+The integration test adds a keyboard shortcut only to a temporary copy of the extension to invoke its existing action. It does not add host permissions or stub Chrome APIs. It uses CDP to attach to the real popup because Playwright does not automatically expose that popup as a page in this setup.
+
+On Linux with Xvfb and xdotool installed, run:
+
+```sh
+xvfb-run --auto-servernum node tests/extension.mjs
+```
+
+These are controlled fixture tests in Chromium, not a certification for every website or a manual Brave test. This remains an initial beta.
 
 Manual release checks:
 - Load unpacked in desktop Chrome and Brave without manifest errors.

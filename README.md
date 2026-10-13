@@ -1,10 +1,33 @@
 # VibeCheck
 
+[![Tests](https://github.com/yasminebek/Vibecheck/actions/workflows/test.yml/badge.svg)](https://github.com/yasminebek/Vibecheck/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-52634e.svg)](LICENSE)
+
+[Install](#install-in-desktop-chrome-or-brave) · [Checks](#what-it-checks) · [Privacy](#privacy) · [Tests](#develop-and-test) · [Contribute](CONTRIBUTING.md)
+
 **Turn a running website into an actionable AI fix prompt.**
 
 A small, local-first Chrome / Brave extension by **Yasmine Bekhiche**. Open a deployed product, scan the current page, review the findings, then paste the generated prompt into your coding agent with access to the source repository.
 
 Version 0.1.0 · MIT licensed · No account · No API key · No runtime dependencies
+
+## The problem it solves
+
+Shipping a page is easier than knowing what needs fixing. VibeCheck bridges the gap between observable problems in a deployed interface and an actionable task for a coding agent. Each finding carries evidence and acceptance checks, so the next step is specific and verifiable.
+
+**Inspect a page → select findings → review the prompt → fix in your repository → verify.**
+
+## Engineering overview
+
+| Component | Responsibility |
+| --- | --- |
+| [audit.js](extension/audit.js) | Collects observations from the current page into structured findings. |
+| [prompt.js](extension/prompt.js) | Converts findings into a deterministic repair prompt without calling an AI service. |
+| [Popup](extension/popup.html) | Lets the user select findings, add context, and copy or export the result. |
+| [Tests](tests/) | Unit, browser-fixture and real-extension integration coverage. |
+| [CI](.github/workflows/test.yml) | Automated validation through GitHub Actions. |
+
+Built with JavaScript and a Manifest V3 browser extension. Runtime analysis stays local; Node.js, jsdom and Playwright support development and testing.
 
 ## Install in desktop Chrome or Brave
 

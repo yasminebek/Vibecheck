@@ -53,6 +53,8 @@ This is an unpacked developer release, not a Chrome Web Store listing. Desktop b
 
 Findings include severity, evidence, structural selectors, suggested fixes and acceptance checks. Up to five example selectors are included per finding type, with the total affected count. “Review” means a heuristic that must be confirmed. Severity reflects likely impact, not a calibrated risk score. No overall quality score is invented.
 
+**Hash navigation — verify manually** flags local fragments without a matching DOM target. A hash router may handle them correctly, so these findings are unchecked and excluded from the fix prompt by default. Test navigation first, then select the finding if needed. The full JSON report still includes it.
+
 The prompt is generated deterministically, without an LLM. You choose where to send it. It asks the coding agent to reproduce observations, inspect the source, preserve behavior, fix confirmed issues and report actual verification.
 
 ## Scope and limitations

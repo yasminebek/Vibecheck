@@ -14,7 +14,7 @@ function render() {
     const card = document.createElement('article'); card.className = 'finding';
     const badge = document.createElement('span'); badge.className = `badge ${f.severity}`; badge.textContent = `${f.severity} · ${f.category}${f.confidence === 'review' ? ' · Review' : ''}`;
     const label = document.createElement('label');
-    const check = document.createElement('input'); check.type = 'checkbox'; check.value = f.id; check.checked = true; check.addEventListener('change', regenerate);
+    const check = document.createElement('input'); check.type = 'checkbox'; check.value = f.id; check.checked = f.selectedByDefault !== false; check.addEventListener('change', regenerate);
     label.append(check, document.createTextNode(f.title));
     const evidence = document.createElement('p'); evidence.textContent = f.evidence;
     const detail = document.createElement('details'); const summary = document.createElement('summary'); summary.textContent = 'Evidence & suggested fix'; detail.append(summary);

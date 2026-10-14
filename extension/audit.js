@@ -33,8 +33,8 @@ export function auditPage() {
     copy.querySelectorAll('[aria-hidden="true"],[hidden],script,style').forEach(x => x.remove());
     return !!copy.textContent.trim() || [...copy.querySelectorAll('img')].some(x => x.alt.trim()) || !!copy.querySelector('svg title');
   };
-  const add = (id, category, severity, title, elements, evidence, fix, verify, confidence = 'high') => {
-    findings.push({id, category, severity, title, count: elements.length || 1, selectors: elements.slice(0, 5).map(selector), evidence, fix, verify, confidence});
+  const add = (id, category, severity, title, elements, evidence, fix, verify, confidence = 'high', selectedByDefault = true) => {
+    findings.push({id, category, severity, title, count: elements.length || 1, selectors: elements.slice(0, 5).map(selector), evidence, fix, verify, confidence, selectedByDefault});
   };
   if (!document.title.trim()) add('title', 'Discovery', 'medium', 'Page title is missing', [], 'The document title is empty.', 'Set a meaningful route-specific document title.', 'Check the browser tab and rendered document title.');
   if (!document.documentElement.lang.trim()) add('language', 'Accessibility', 'medium', 'Document language is missing', [document.documentElement], 'The html element has no non-empty lang attribute.', 'Declare the correct document language.', 'Verify the lang attribute matches the primary page language.');
@@ -56,12 +56,12 @@ export function auditPage() {
   if (unnamed.length) add('link-name', 'Accessibility', 'medium', 'Links may lack accessible names', unnamed, `${unnamed.length} visible links have no detected name.`, 'Provide descriptive link text or an appropriate accessible name.', 'Verify each link has an understandable name.', 'review');
   const placeholders = links.filter(x => x.getAttribute('href').trim() === '#');
   if (placeholders.length) add('placeholder-link', 'Reliability', 'medium', 'Placeholder links need review', placeholders, `${placeholders.length} visible links point to #; scripted behavior was not tested.`, 'Connect navigation to real destinations; use buttons for actions. Preserve valid scripted interactions.', 'Activate each flagged control and confirm the intended behavior.', 'review');
-  const deadFragments = links.filter(x => {
+  const unresolvedFragments = links.filter(x => {
     const raw = x.getAttribute('href');
     if (!raw.startsWith('#') || raw.length < 2 || raw.startsWith('#:~:text=')) return false;
     try { const target = decodeURIComponent(raw.slice(1)); return !document.getElementById(target) && !document.getElementsByName(target).length; } catch { return false; }
   });
-  if (deadFragments.length) add('fragment', 'Reliability', 'medium', 'Fragment links have no matching target', deadFragments, `${deadFragments.length} local fragments have no matching id or name; hash routers may handle these.`, 'Verify router behavior or add/correct the intended anchor target.', 'Activate the link and verify navigation or scrolling.', 'review');
+  if (unresolvedFragments.length) add('fragment', 'Reliability', 'medium', 'Hash navigation — verify manually', unresolvedFragments, `${unresolvedFragments.length} local fragments have no matching DOM id or name. Hash-router behavior was not tested; this does not confirm broken navigation.`, 'Verify intended routing first. Only correct the route or anchor target if navigation fails; preserve working hash-router links.', 'Activate each link with a mouse and keyboard and verify the intended navigation or scrolling.', 'review', false);
   const doc = document.documentElement;
   if (doc.scrollWidth > doc.clientWidth + 4) add('overflow', 'Layout', 'medium', 'Page has horizontal overflow', [], `Document width ${doc.scrollWidth}px exceeds viewport width ${doc.clientWidth}px.`, 'Identify oversized containers, fixed widths or unbroken content. Preserve intentionally scrollable regions.', 'Verify there is no unintended page-level horizontal scrolling at mobile and desktop widths.', 'review');
   const positiveTabs = q('[tabindex]').filter(visible).filter(x => Number(x.getAttribute('tabindex')) > 0);

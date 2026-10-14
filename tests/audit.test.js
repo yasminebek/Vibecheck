@@ -35,3 +35,19 @@ test('caps selectors but preserves total affected count', () => {
  const f = scan('<body>'+ '<button></button>'.repeat(10)+'</body>').findings.find(f=>f.id==='button-name');
  assert.equal(f.count,10); assert.equal(f.selectors.length,5);
 });
+
+test('unresolved hash navigation is a manual review excluded by default', () => {
+ const r = scan('<a href="#clients">Clients</a><a href="#client/demo-0">Demo</a><a href="#missing">Missing anchor</a><a href="#">Placeholder</a>');
+ const f = r.findings.find(f => f.id === 'fragment');
+ assert.equal(f.title, 'Hash navigation — verify manually');
+ assert.equal(f.count, 3);
+ assert.equal(f.confidence, 'review');
+ assert.equal(f.selectedByDefault, false);
+ assert.match(f.evidence, /does not confirm broken navigation/);
+ assert.equal(r.findings.find(f => f.id === 'placeholder-link').selectedByDefault, true);
+ assert.ok(!JSON.stringify(r).includes('demo-0'));
+});
+test('existing id, named and encoded anchors and text fragments are not flagged', () => {
+ const r = scan('<a href="#target">ID</a><main id="target"></main><a href="#legacy">Name</a><a name="legacy"></a><a href="#a%20b">Encoded</a><div id="a b"></div><a href="#:~:text=hello">Text</a>');
+ assert.ok(!r.findings.some(f => f.id === 'fragment'));
+});
